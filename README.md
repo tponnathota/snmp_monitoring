@@ -23,5 +23,5 @@ Validate Grafana deployemnt
 
 
 
-
+  Logs - kubectl logs containername -n namespace --tail=100
 
