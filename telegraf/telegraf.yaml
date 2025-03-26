@@ -1,0 +1,134 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+ name: telegraf-config
+ namespace: telegraf-namespace
+data:
+ telegraf.conf: |
+  [global_tags]
+  # Add any global tags here
+  [agent]
+  interval = "10s" # Adjust the interval as per your requirements
+  round_interval = true
+  metric_batch_size = 1000
+  metric_buffer_limit = 10000
+  collection_jitter = "0s"
+  flush_interval = "10s"
+  flush_jitter = "0s"
+  precision = ""
+  hostname = ""
+  # # Retrieves SNMP values from remote agents
+  [[inputs.snmp]]
+  #   ## Agent addresses to retrieve values from.
+  #   ##   format:  agents = ["<scheme://><hostname>:<port>"]
+  #   ##   scheme:  optional, either udp, udp4, udp6, tcp, tcp4, tcp6. Default is udp
+  #   ##   port:    optional
+     agents = ["udp://snmp_host:161"]
+     interval = "3m"
+  #   # timeout = "5s"
+  #
+  #   ## SNMP version; can be 1, 2, or 3.
+  #   # version = 2
+  #
+  #   # unconnected_udp_socket = false
+  #
+  #   ## Path to mib files
+  #   ## Used by the gosmi translator.
+  #   ## To add paths when translating with netsnmp, use the MIBDIRS environment variable
+  #   # path = ["/usr/share/snmp/mibs"]
+  #
+  #   ## SNMP community string.
+  #   # community = "public"
+  #
+  #   ## Agent host tag; should be set to "source" for consistent usage across plugins
+  #   ##   example: agent_host_tag = "source"
+  #   # agent_host_tag = "agent_host"
+  #
+  #   ## Number of retries to attempt.
+  #   # retries = 3
+  #
+  #   ## The GETBULK max-repetitions parameter.
+  #   # max_repetitions = 10
+  #
+  #   ## SNMPv3 authentication and encryption options.
+  #   ##
+  #   # sec_name = "myuser"
+  #   ## Authentication protocol; one of "MD5", "SHA", "SHA224", "SHA256", "SHA384", "SHA512" or "".
+  #   # auth_protocol = "MD5"
+  #   # auth_password = "pass"
+  #   ## Security Level; one of "noAuthNoPriv", "authNoPriv", or "authPriv".
+  #   # sec_level = "authNoPriv"
+  #   # context_name = ""
+  #   ## Privacy protocol used for encrypted messages; one of "DES", "AES", "AES192", "AES192C", "AES256", "AES256C", or "".
+  #   ### Protocols "AES192", "AES192", "AES256", and "AES256C" require the underlying net-snmp tools
+  #   ### to be compiled with --enable-blumenthal-aes (http://www.net-snmp.org/docs/INSTALL.html)
+  #   # priv_protocol = ""
+  #   ## Privacy password used for encrypted messages.
+  #   # priv_password = ""
+  #
+  #   ## Add fields and tables defining the variables you wish to collect.  This
+   [[inputs.snmp.field]]
+     oid = "RFC1213-MIB::sysUpTime.0"
+     name = "sysUptime"
+     conversion = "float(2)"
+
+   [[inputs.snmp.field]]
+     oid = "RFC1213-MIB::sysName.0"
+     name = "sysName"
+     is_tag = true
+
+   [[inputs.snmp.table]]
+     oid = "IF-MIB::ifTable"
+     name = "interface"
+     inherit_tags = ["sysName"]
+
+     [[inputs.snmp.table.field]]
+       oid = "IF-MIB::ifDescr"
+       name = "ifDescr"
+       is_tag = true
+
+  [[outputs.influxdb_v2]]
+  urls = ["http://influxdb-host:8086"]
+  token = "api token"
+  organization = "org_name"
+  bucket = "bucket_name"
+  ## Optional TLS Config for use on HTTP connections.
+  # tls_ca = "/etc/telegraf/ca.pem"
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key = "/etc/telegraf/key.pem"
+  ## Use TLS but skip chain & host verification
+  # insecure_skip_verify = false
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegraf
+  namespace: telegraf-namespace
+spec:
+  replicas: 1 # Adjust the number of replicas as needed
+  selector:
+    matchLabels:
+      app: telegraf
+  template:
+    metadata:
+      labels:
+        app: telegraf
+    spec:
+      containers:
+        - name: telegraf
+          image: telegraf:latest # Replace with the Telegraf image name and version
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/telegraf
+            - name: mibs
+              mountPath: /usr/share/snmp
+      volumes:
+        - name: config-volume
+          configMap:
+            name: telegraf-config
+        - name: mibs
+          hostPath:
+            path: /home/telegraf/snmp
