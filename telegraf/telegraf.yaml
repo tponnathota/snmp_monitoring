@@ -86,6 +86,10 @@ data:
     oid = "HOST-RESOURCES-MIB::hrStorageDescr"
     is_tag = true
 
+  [[inputs.snmp_trap]]
+   service_address = "udp://localhost:5162"
+   timeout = "10s"
+
   #[[outputs.influxdb_v2]]
   #urls = [""]
   #token = ""
