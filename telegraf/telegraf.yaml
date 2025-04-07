@@ -37,9 +37,11 @@ data:
     name = "hostname"
     oid = ".1.3.6.1.2.1.1.5.0"
     is_tag = true
+   
    [[inputs.snmp.tags]]
     site = ""
     network = ""
+   
    [[inputs.snmp.field]]
      name = "uptime"
      oid = "RFC1213-MIB::sysUpTime.0"
@@ -84,11 +86,14 @@ data:
     oid = "HOST-RESOURCES-MIB::hrStorageDescr"
     is_tag = true
 
-  [[outputs.influxdb_v2]]
-  urls = [""]
-  token = ""
-  organization = ""
-  bucket = ""
+  #[[outputs.influxdb_v2]]
+  #urls = [""]
+  #token = ""
+  #organization = ""
+  #bucket = ""
+
+  [[outputs.syslog]]
+  address = "tcp://ip-address:port"
 
 
 
