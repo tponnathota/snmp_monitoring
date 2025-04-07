@@ -128,4 +128,4 @@ spec:
             name: telegraf-config
         - name: mibs
           hostPath:
-            path: /Users/ponnathota/Documents/snmp_monitoring/telgraf/snmp
+            path: {path_to_snmp_monitoring}/snmp_monitoring/telgraf/snmp
